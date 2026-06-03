@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<!--
+  ┌─────────────────────────────────────────────────────────────┐
+  │  AI 黑话互动词典  ·  你的第一个 AI 作品                          │
+  │                                                               │
+  │  这个文件分三层(往下滚你能看到):                              │
+  │   1. <style>   = CSS,负责"长什么样"(颜色/圆角/动画)           │
+  │   2. <body>    = HTML,负责"有哪些内容"(标题/卡片/搜索框)       │
+  │   3. <script>  = JavaScript,负责"能干啥"(搜索/筛选/点击展开)   │
+  │                                                               │
+  │  双击这个文件,就能在浏览器里看到效果。                          │
+  └─────────────────────────────────────────────────────────────┘
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <!-- 这一行让网页在手机上也能正常显示(自适应屏幕宽度) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 黑话互动词典 · 看懂 AI 圈的行话</title>
+
+  <!-- ===================== 第 1 层:CSS(化妆) ===================== -->
+  <style>
+    /* :root 里放的是"全局变量",相当于先调好一套配色,后面随时取用 */
+    :root {
+      --bg: #0b1020;
+      --bg-soft: #141b33;
+      --card: #1a2342;
+      --card-hover: #222d54;
+      --text: #eef2ff;
+      --text-dim: #9aa6cc;
+      --accent: #7c8cff;
+      --accent-2: #58e6c9;
+      --border: rgba(255, 255, 255, 0.08);
+      --shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    /* 浅色主题:当 <html> 带上 data-theme="light" 时,这里的颜色会覆盖上面的深色 */
+    html[data-theme="light"] {
+      --bg: #f5f7ff;
+      --bg-soft: #ffffff;
+      --card: #ffffff;
+      --card-hover: #eef2ff;
+      --text: #131a2e;
+      --text-dim: #5a6488;
+      --accent: #5566ee;
+      --accent-2: #11b095;
+      --border: rgba(20, 30, 80, 0.10);
+      --shadow: 0 10px 40px rgba(60, 80, 180, 0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      /* 给整个背景加一点柔和的光晕,显得高级 */
+      background-image:
+        radial-gradient(800px 400px at 15% -5%, rgba(124,140,255,0.18), transparent),
+        radial-gradient(700px 400px at 100% 0%, rgba(88,230,201,0.12), transparent);
+      min-height: 100vh;
+      /* 切换深浅色时,颜色平滑过渡,不会"啪"地一下跳变 */
+      transition: background-color .3s ease, color .3s ease;
+    }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+    /* 右上角的深浅色切换按钮 */
+    .theme-toggle {
+      position: fixed;
+      top: 18px; right: 18px;
+      z-index: 10;
+      width: 46px; height: 46px;
+      border-radius: 13px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .2s, border-color .2s;
+    }
+    .theme-toggle:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+    /* 卡片淡入动画:从下方轻轻浮现 */
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---------- 顶部 Hero 区(网页的"门面") ---------- */
+    header.hero {
+      text-align: center;
+      padding: 70px 20px 40px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 13px;
+      color: var(--accent-2);
+      border: 1px solid var(--border);
+      background: rgba(88,230,201,0.08);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 22px;
+      letter-spacing: 0.5px;
+    }
+    .hero h1 {
+      font-size: clamp(30px, 6vw, 52px);
+      line-height: 1.2;
+      margin-bottom: 16px;
+      /* 给标题加渐变色文字,这是个常见的"高级感"技巧 */
+      background: linear-gradient(120deg, var(--text), var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p {
+      color: var(--text-dim);
+      font-size: clamp(15px, 2.2vw, 18px);
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* ---------- 搜索框 + 计数 ---------- */
+    .controls {
+      margin: 36px auto 10px;
+      max-width: 620px;
+    }
+    .search-box {
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 16px 18px 16px 48px;
+      font-size: 16px;
+      color: var(--text);
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .search-box input::placeholder { color: var(--text-dim); }
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(124,140,255,0.15);
+    }
+    .search-box .icon {
+      position: absolute;
+      left: 16px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 18px;
+    }
+
+    /* ---------- 分类筛选小标签 ---------- */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 18px 0 6px;
+    }
+    .chip {
+      font-size: 14px;
+      color: var(--text-dim);
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .18s;
+      user-select: none;
+    }
+    .chip:hover { color: var(--text); border-color: var(--accent); }
+    .chip.active {
+      color: #0b1020;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      font-weight: 600;
+    }
+    .count {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 14px;
+      margin: 8px 0 30px;
+    }
+
+    /* ---------- 卡片网格 ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+      padding-bottom: 80px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      cursor: pointer;
+      transition: transform .18s, background .18s, border-color .18s;
+      position: relative;
+      overflow: hidden;
+      animation: cardIn .45s ease backwards; /* 应用上面定义的淡入动画 */
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      background: var(--card-hover);
+      border-color: rgba(124,140,255,0.4);
+    }
+    .card .cat {
+      font-size: 12px;
+      color: var(--accent-2);
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .card h3 {
+      font-size: 21px;
+      margin-bottom: 4px;
+    }
+    .card .en {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+    .card .one-liner {
+      font-size: 15px;
+      color: var(--text);
+    }
+    /* 详情区默认收起,点击卡片后展开 */
+    .card .detail {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height .35s ease, opacity .3s ease, margin .3s;
+      margin-top: 0;
+    }
+    .card.open .detail {
+      max-height: 400px;
+      opacity: 1;
+      margin-top: 16px;
+    }
+    .card .detail .story {
+      font-size: 14px;
+      color: var(--text-dim);
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .card .detail .pm {
+      margin-top: 14px;
+      font-size: 14px;
+      background: rgba(124,140,255,0.1);
+      border-left: 3px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 8px;
+    }
+    .card .detail .pm b { color: var(--accent-2); }
+    .card .tap-hint {
+      position: absolute;
+      top: 22px; right: 22px;
+      font-size: 12px;
+      color: var(--text-dim);
+      transition: transform .25s;
+    }
+    .card.open .tap-hint { transform: rotate(180deg); }
+
+    /* 搜索没结果时的提示 */
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--text-dim);
+      padding: 60px 0;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+      padding: 40px 20px 60px;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+
+<!-- ===================== 第 2 层:HTML(骨架/内容) ===================== -->
+<body>
+  <!-- 右上角的深浅色切换按钮,点击由 JavaScript 处理 -->
+  <button class="theme-toggle" id="themeToggle" title="切换深 / 浅色">🌙</button>
+
+  <div class="wrap">
+    <header class="hero">
+      <span class="badge">✦ 看懂 AI 圈的行话 · 给非技术同学的速查词典</span>
+      <h1>AI 黑话互动词典</h1>
+      <p>把每个 AI 概念,都想象成你新招的天才实习生「小克」的故事。点开卡片,看故事化讲解 + 产品经理视角。</p>
+
+      <div class="controls">
+        <div class="search-box">
+          <span class="icon">🔍</span>
+          <!-- 用户在这里打字,JavaScript 会实时筛选卡片 -->
+          <input id="search" type="text" placeholder="搜一个词,比如「RAG」「幻觉」「token」…" />
+        </div>
+        <div class="filters" id="filters"><!-- 分类标签由 JavaScript 自动生成 --></div>
+        <div class="count" id="count"></div>
+      </div>
+    </header>
+
+    <!-- 所有卡片会被 JavaScript 自动塞进这个 grid 里 -->
+    <main class="grid" id="grid"></main>
+  </div>
+
+  <footer>
+    由 <b>AI 黑话词典</b> 出品 · 我的第一个 AI 作品 ·
+    用 <a href="https://claude.com/claude-code" target="_blank">Claude Code</a> 制作
+  </footer>
+
+  <!-- ===================== 第 3 层:JavaScript(行为/互动) ===================== -->
+  <script>
+    /*
+      下面这个 TERMS 就是我们所有的"词条数据"。
+      它是一个列表,每个 {} 是一张卡片,包含:
+        cat      = 分类
+        zh / en  = 中文名 / 英文名
+        oneLiner = 一句话翻译(卡片正面)
+        story    = 故事化讲解(点开后)
+        pm       = 产品经理视角(点开后)
+
+      ★ 想加新词?照着格式复制一段就行,这是你最容易上手改的地方。
+    */
+    const TERMS = [
+      {
+        cat: "基础概念", zh: "大语言模型", en: "LLM · Large Language Model",
+        oneLiner: "读完整个互联网的天才实习生「小克」。",
+        story: "小克入职前被关在房间里读完了几乎所有的书、网页和代码,所以他几乎什么都懂一点。GPT、Claude、文心一言,本质都是这样的大语言模型。",
+        pm: "<b>PM 视角:</b>选模型就像招人——要在「聪明度 / 速度 / 价格」之间权衡,不是越大越好。"
+      },
+      {
+        cat: "成本相关", zh: "Token", en: "Token · 令牌",
+        oneLiner: "AI 按「字数」收费的计量单位。",
+        story: "小克干活不按小时收费,按处理了多少字收费,这个单位就是 token(中文大约 1~2 字 = 1 token)。输入和输出都要算钱。",
+        pm: "<b>PM 视角:</b>token = 钱。设计功能时要算账,一个让用户狂聊的功能可能成本爆炸。「省 token」是 AI PM 的基本功。"
+      },
+      {
+        cat: "基础概念", zh: "训练 / 推理", en: "Training / Inference",
+        oneLiner: "闭关苦读 vs. 日常干活。",
+        story: "小克「闭关读完整个互联网」的过程叫训练,极贵、一次性,只有大公司玩得起;你日常问一句他答一句,叫推理。",
+        pm: "<b>PM 视角:</b>你产品里每一次对话都是「推理」,推理成本才是日常要控制的开销。"
+      },
+      {
+        cat: "基础概念", zh: "参数", en: "Parameters · 7B / 70B",
+        oneLiner: "小克脑子里的「神经连接」数量。",
+        story: "你听到的 7B、70B、671B,就是 70 亿、700 亿、6710 亿个参数。参数越多,通常越聪明,但也越贵、越慢。",
+        pm: "<b>PM 视角:</b>不是越大越好。很多场景用小模型又快又省钱,够用就行。"
+      },
+      {
+        cat: "基础概念", zh: "上下文窗口", en: "Context Window",
+        oneLiner: "小克的「短期记忆」长度。",
+        story: "小克跟你聊天只能记住最近一段对话。聊太久他会「忘了」前面说的,因为超出了上下文窗口。这也是各家拼命卷「长上下文」的原因。",
+        pm: "<b>PM 视角:</b>长对话、长文档类产品要特别关注上下文窗口,否则会出现「失忆」体验。"
+      },
+      {
+        cat: "使用技巧", zh: "提示词工程", en: "Prompt Engineering",
+        oneLiner: "把话说好,让 AI 表现更好。",
+        story: "对小克说「写篇文章」他敷衍;说「你是资深科技记者,给小白写 300 字、带 3 个生活类比」他立刻变身。这种技巧就是提示词工程。",
+        pm: "<b>PM 视角:</b>System Prompt = 给 AI 的「人设/入职手册」,是产品体验的核心,很多功能其实就是一段精心写的提示词。"
+      },
+      {
+        cat: "风险", zh: "幻觉", en: "Hallucination",
+        oneLiner: "AI 自信地「一本正经胡说八道」。",
+        story: "你问小克一个他不知道的事,他不会说「我不知道」,反而会自信地编一个出来。这就是幻觉。",
+        pm: "<b>PM 视角:</b>这是 AI 产品最大的坑。医疗/法律/金融最怕幻觉。常见解法是下面的 RAG。"
+      },
+      {
+        cat: "进阶架构", zh: "RAG 检索增强生成", en: "Retrieval-Augmented Generation",
+        oneLiner: "让 AI「开卷考试」——先查资料,再回答。",
+        story: "给小克配一个带搜索的资料柜:他回答前先去公司真实文档里查一下,再根据查到的内容回答。这就治住了幻觉。",
+        pm: "<b>PM 视角:</b>几乎所有「企业知识库问答 / 客服机器人」底层都是 RAG。面试高频考点,务必能讲清。"
+      },
+      {
+        cat: "进阶架构", zh: "微调", en: "Fine-tuning",
+        oneLiner: "把 AI 送去「读个研究生」。",
+        story: "想让小克永久变成法律专家,就拿大量法律资料再训练他一次,这叫微调。它改变了能力本身。",
+        pm: "<b>PM 视角:</b>经典对比题——RAG = 开卷考试(快、便宜、改得快);微调 = 读研深造(贵、慢,但更内化)。"
+      },
+      {
+        cat: "前沿", zh: "多模态", en: "Multimodal",
+        oneLiner: "AI 不只会读字,还能看图、听声、看视频。",
+        story: "升级后的小克不再只懂文字,你发张图、一段语音他都能理解和处理。这就是多模态。",
+        pm: "<b>PM 视角:</b>多模态打开了大量新产品场景:拍照问诊、截图问答、视频理解等。"
+      },
+      {
+        cat: "前沿", zh: "Agent 智能体", en: "AI Agent",
+        oneLiner: "能「自己动手干活」的 AI。",
+        story: "小克不只动嘴回答,还能上网搜索、调用工具、一步步完成复杂任务(比如「帮我订明天最便宜的机票」)。你正在用的 Claude Code 本身就是一个 Agent。",
+        pm: "<b>PM 视角:</b>这是 2025–2026 最火的方向。从「会聊天」到「会做事」,是 AI 产品的下一个主战场。"
+      },
+      {
+        cat: "使用技巧", zh: "Temperature 温度", en: "Temperature",
+        oneLiner: "AI 的「脑洞旋钮」。",
+        story: "温度调低,小克严谨保守、每次答得差不多(适合查资料、算数);调高,他天马行空有创意(适合写文案、起名)。",
+        pm: "<b>PM 视角:</b>不同功能要配不同温度——客服要稳(低温),创意要野(高温)。"
+      },
+      {
+        cat: "基础概念", zh: "开源 / 闭源", en: "Open-source / Closed-source",
+        oneLiner: "模型「公开免费用」还是「只能租着用」。",
+        story: "有的模型(如 Llama、DeepSeek、Qwen)把「大脑」公开了,你能下载来自己部署、自己改,这是开源;有的(如 GPT、Claude)只通过接口对外服务,这是闭源。",
+        pm: "<b>PM 视角:</b>开源=可控、可私有部署、数据不外流,但要自己养机器;闭源=即开即用、能力强,但按量付费、依赖厂商。选型常考。"
+      },
+      {
+        cat: "成本相关", zh: "API", en: "Application Programming Interface · 接口",
+        oneLiner: "让你的软件「打电话叫 AI 干活」的电话号码。",
+        story: "你不用自己造大模型,只要拿到厂商的 API(一段密钥 + 网址),你的网站/App 就能把问题发过去、把答案收回来。绝大多数 AI 产品都是这么接上 AI 的。",
+        pm: "<b>PM 视角:</b>「调 API」是 AI 产品最常见的落地方式。你要会算 API 的调用成本,并理解限流、延迟对体验的影响。"
+      },
+      {
+        cat: "前沿", zh: "MCP", en: "Model Context Protocol · 模型上下文协议",
+        oneLiner: "给 AI 接各种工具的「标准插座」。",
+        story: "以前每给 AI 接一个新工具(数据库、日历、文件)都要单独定制。MCP 像 USB 标准插座,让 AI 用统一方式连接外部工具和数据。Claude Code 就靠它接各种能力。",
+        pm: "<b>PM 视角:</b>2025 起爆火的概念。它让 Agent 更容易「即插即用」地接入企业内部系统,是 AI 落地的关键拼图。"
+      },
+      {
+        cat: "进阶架构", zh: "蒸馏", en: "Distillation",
+        oneLiner: "让「大模型老师」教出一个「小模型学生」。",
+        story: "用一个又大又贵的模型当老师,训练出一个又小又快的学生模型,学生学到了老师大部分本事,却便宜得多。手机上能跑的小模型很多是这么来的。",
+        pm: "<b>PM 视角:</b>蒸馏是「降本」利器。当大模型效果够好但太贵时,蒸馏出小模型能在保住体验的同时大幅省钱。"
+      },
+      {
+        cat: "前沿", zh: "涌现能力", en: "Emergent Abilities",
+        oneLiner: "模型大到一定程度,突然「无师自通」的新本领。",
+        story: "小模型不会的能力(比如多步推理、做数学题),在模型规模超过某个临界点后会「突然」出现,像是量变到质变。这种没被专门教却冒出来的能力,叫涌现。",
+        pm: "<b>PM 视角:</b>理解涌现能帮你判断「该等更大的模型,还是该用别的工程手段(如 RAG)补齐能力」。"
+      }
+    ];
+
+    // ---------- 下面是让网页「活起来」的逻辑 ----------
+
+    const grid = document.getElementById("grid");
+    const countEl = document.getElementById("count");
+    const filtersEl = document.getElementById("filters");
+    const searchEl = document.getElementById("search");
+
+    let activeCat = "全部";          // 当前选中的分类
+    let keyword = "";                // 当前搜索关键词
+
+    // 1) 自动收集所有分类,生成顶部的筛选标签
+    const cats = ["全部", ...new Set(TERMS.map(t => t.cat))];
+    filtersEl.innerHTML = cats
+      .map(c => `<span class="chip ${c === "全部" ? "active" : ""}" data-cat="${c}">${c}</span>`)
+      .join("");
+
+    // 点击分类标签 → 切换筛选
+    filtersEl.addEventListener("click", e => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      activeCat = chip.dataset.cat;
+      document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      render();
+    });
+
+    // 在搜索框里打字 → 实时筛选
+    searchEl.addEventListener("input", e => {
+      keyword = e.target.value.trim().toLowerCase();
+      render();
+    });
+
+    // 2) render():根据当前的「分类 + 关键词」,把符合的卡片画出来
+    function render() {
+      const list = TERMS.filter(t => {
+        const matchCat = activeCat === "全部" || t.cat === activeCat;
+        const haystack = (t.zh + t.en + t.oneLiner + t.story).toLowerCase();
+        const matchKw = keyword === "" || haystack.includes(keyword);
+        return matchCat && matchKw;
+      });
+
+      countEl.textContent = `共 ${list.length} 个词条`;
+
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="empty">😶 没找到「${keyword}」相关的词条,换个词试试?</div>`;
+        return;
+      }
+
+      grid.innerHTML = list.map((t, i) => `
+        <article class="card" style="animation-delay:${i * 45}ms">
+          <span class="tap-hint">▾</span>
+          <div class="cat">${t.cat}</div>
+          <h3>${t.zh}</h3>
+          <div class="en">${t.en}</div>
+          <div class="one-liner">${t.oneLiner}</div>
+          <div class="detail">
+            <div class="story">📖 ${t.story}</div>
+            <div class="pm">${t.pm}</div>
+          </div>
+        </article>
+      `).join("");
+
+      // 给每张卡片绑定「点击展开/收起」
+      document.querySelectorAll(".card").forEach(card => {
+        card.addEventListener("click", () => card.classList.toggle("open"));
+      });
+    }
+
+    // 3) 深浅色切换:点按钮切换主题,并用 localStorage 记住选择
+    const themeToggle = document.getElementById("themeToggle");
+    // 打开网页时,先读取上次保存的选择
+    if (localStorage.getItem("theme") === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+      themeToggle.textContent = "☀️";
+    }
+    themeToggle.addEventListener("click", () => {
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+      if (isLight) {
+        document.documentElement.removeAttribute("data-theme");
+        themeToggle.textContent = "🌙";
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.setAttribute("data-theme", "light");
+        themeToggle.textContent = "☀️";
+        localStorage.setItem("theme", "light");
+      }
+    });
+
+    // 网页一打开,先画一次
+    render();
+  </script>
+</body>
+</html>
