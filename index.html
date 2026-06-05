@@ -121,6 +121,25 @@
       max-width: 620px;
       margin: 0 auto;
     }
+    /* 通往姊妹篇(拆解报告)的入口按钮 */
+    .cross-link {
+      display: inline-block;
+      margin-top: 22px;
+      font-size: 15px;
+      color: var(--accent-2);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: rgba(88,230,201,0.08);
+      padding: 10px 20px;
+      border-radius: 999px;
+      transition: all .18s;
+    }
+    .cross-link:hover {
+      color: #0b1020;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      transform: translateY(-2px);
+    }
 
     /* ---------- 搜索框 + 计数 ---------- */
     .controls {
@@ -295,6 +314,7 @@
       <span class="badge">✦ 看懂 AI 圈的行话 · 给非技术同学的速查词典</span>
       <h1>AI 黑话互动词典</h1>
       <p>把每个 AI 概念,都想象成你新招的天才实习生「小克」的故事。点开卡片,看故事化讲解 + 产品经理视角。</p>
+      <a class="cross-link" href="chatgpt-teardown.html">📊 看姊妹篇:ChatGPT 产品拆解报告 →</a>
 
       <div class="controls">
         <div class="search-box">
